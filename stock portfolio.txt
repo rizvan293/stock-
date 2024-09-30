@@ -1,0 +1,78 @@
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+
+class StockPortfolioTracker:
+    def __init__(self):
+        self.portfolio = {}
+
+    def add_stock(self, ticker, quantity):
+        if ticker not in self.portfolio:
+            self.portfolio[ticker] = {'quantity': quantity, 'historical_data': None}
+            self.update_historical_data(ticker)
+
+    def remove_stock(self, ticker):
+        if ticker in self.portfolio:
+            del self.portfolio[ticker]
+
+    def update_historical_data(self, ticker):
+        ticker_data = yf.Ticker(ticker)
+        historical_data = ticker_data.history(period="max")
+        self.portfolio[ticker]['historical_data'] = historical_data
+
+    def calculate_portfolio_value(self):
+        total_value = 0
+        for ticker, data in self.portfolio.items():
+            current_price = data['historical_data']['Close'].iloc[-1]
+            total_value += current_price * data['quantity']
+        return total_value
+
+    def track_performance(self, start_date, end_date):
+        portfolio_values = []
+        for ticker, data in self.portfolio.items():
+            filtered_data = data['historical_data'][start_date:end_date]
+            portfolio_values.append(filtered_data['Close'] * data['quantity'])
+        portfolio_returns = pd.concat(portfolio_values, axis=1).sum(axis=1)
+        return portfolio_returns
+
+    def visualize_performance(self, start_date, end_date):
+        portfolio_returns = self.track_performance(start_date, end_date)
+        portfolio_returns.plot(title="Portfolio Performance")
+        plt.xlabel("Date")
+        plt.ylabel("Value")
+        plt.show()
+
+def main():
+    tracker = StockPortfolioTracker()
+
+    while True:
+        print("1. Add Stock")
+        print("2. Remove Stock")
+        print("3. Track Performance")
+        print("4. Visualize Performance")
+        print("5. Quit")
+
+        choice = int(input("Enter your choice: "))
+
+        if choice == 1:
+            ticker = input("Enter the ticker symbol: ")
+            quantity = int(input("Enter the quantity: "))
+            tracker.add_stock(ticker, quantity)
+        elif choice == 2:
+            ticker = input("Enter the ticker symbol: ")
+            tracker.remove_stock(ticker)
+        elif choice == 3:
+            start_date = input("Enter the start date (YYYY-MM-DD): ")
+            end_date = input("Enter the end date (YYYY-MM-DD): ")
+            portfolio_returns = tracker.track_performance(start_date, end_date)
+            print("Portfolio Returns:")
+            print(portfolio_returns)
+        elif choice == 4:
+            start_date = input("Enter the start date (YYYY-MM-DD): ")
+            end_date = input("Enter the end date (YYYY-MM-DD): ")
+            tracker.visualize_performance(start_date, end_date)
+        elif choice == 5:
+            break
+
+if __name__ == "__main__":
+    main()
